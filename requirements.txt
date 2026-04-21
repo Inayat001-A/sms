@@ -3,4 +3,3 @@ ultralytics
 streamlit
 pandas
 numpy
-face-recognition
