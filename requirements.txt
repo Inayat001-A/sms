@@ -3,3 +3,5 @@ ultralytics
 streamlit
 pandas
 numpy
+twilio
+python-dotenv

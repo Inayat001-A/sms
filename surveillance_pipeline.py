@@ -7,6 +7,7 @@ from ultralytics import YOLO
 import face_recognition
 
 from database import log_event
+from notifier import AlertSystem
 
 class SurveillancePipeline:
     def __init__(self, camera_index=0, crowd_threshold=5):
@@ -27,6 +28,13 @@ class SurveillancePipeline:
             "unknown_face": 0.0
         }
         self.ALERT_COOLDOWN = 10 # seconds cooldown for same alert type
+        
+        self.alert_system = AlertSystem()
+        self.enable_email = True
+        self.enable_sms = False
+        self.alert_crowd = True
+        self.alert_weapon = True
+        self.alert_unknown = True
         
         # Track memory for persistent identities across frames
         self.track_names: Dict[int, str] = {}
@@ -89,6 +97,8 @@ class SurveillancePipeline:
 
             if has_unknown and (current_time - self.last_alert_times["unknown_face"] > self.ALERT_COOLDOWN):
                 log_event("UNKNOWN_FACE", "Unrecognized person detected.")
+                if self.alert_unknown and (self.enable_email or self.enable_sms):
+                    self.alert_system.dispatch_alert("UNKNOWN_FACE", "Unrecognized person detected.", self.enable_email, self.enable_sms)
                 self.last_alert_times["unknown_face"] = current_time
 
         # 2. Run YOLO object detection with tracking
@@ -144,6 +154,8 @@ class SurveillancePipeline:
         if person_count >= self.crowd_threshold:
             if current_time - self.last_alert_times["crowd"] > self.ALERT_COOLDOWN:
                 log_event("CROWD_DETECTED", f"Crowd of {person_count} people detected.")
+                if self.alert_crowd and (self.enable_email or self.enable_sms):
+                    self.alert_system.dispatch_alert("CROWD_DETECTED", f"Crowd of {person_count} people detected.", self.enable_email, self.enable_sms)
                 self.last_alert_times["crowd"] = current_time
                 cv2.putText(frame, "ALERT: CROWD DETECTED", (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 3)
 
@@ -151,6 +163,8 @@ class SurveillancePipeline:
         if weapon_detected:
             if current_time - self.last_alert_times["weapon"] > self.ALERT_COOLDOWN:
                 log_event("WEAPON_DETECTED", "Suspicious object/weapon detected!")
+                if self.alert_weapon and (self.enable_email or self.enable_sms):
+                    self.alert_system.dispatch_alert("WEAPON_DETECTED", "Suspicious object/weapon detected!", self.enable_email, self.enable_sms)
                 self.last_alert_times["weapon"] = current_time
             cv2.putText(frame, "ALERT: WEAPON DETECTED", (50, 100), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 3)
 

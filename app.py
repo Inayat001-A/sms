@@ -23,6 +23,21 @@ else:
     st.session_state.pipeline.camera_index = cam_idx
     st.session_state.pipeline.crowd_threshold = crowd_val
 
+st.sidebar.header("🚨 Notification Settings")
+enable_email = st.sidebar.checkbox("📬 Enable Email Alerts", value=True)
+enable_sms = st.sidebar.checkbox("📱 Enable SMS Alerts", value=False)
+
+st.sidebar.subheader("Events to Alert On")
+alert_crowd = st.sidebar.checkbox("👥 Crowd Detected", value=True)
+alert_weapon = st.sidebar.checkbox("🔪 Weapon Detected", value=True)
+alert_unknown = st.sidebar.checkbox("❓ Unknown Face", value=True)
+
+st.session_state.pipeline.enable_email = enable_email
+st.session_state.pipeline.enable_sms = enable_sms
+st.session_state.pipeline.alert_crowd = alert_crowd
+st.session_state.pipeline.alert_weapon = alert_weapon
+st.session_state.pipeline.alert_unknown = alert_unknown
+
 with st.sidebar.expander("📷 Add Person Identity"):
     st.info("Start Surveillance, type a name, and click to capture from live feed.")
     new_name = st.text_input("Person Name")
