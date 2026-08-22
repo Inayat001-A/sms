@@ -128,13 +128,31 @@ class SurveillanceDesktopApp(ctk.CTk):
         ctk.CTkLabel(self.left_panel, text="Camera Source:", font=ctk.CTkFont(size=12)).pack(anchor="w")
         self.cam_select = ctk.CTkOptionMenu(
             self.left_panel,
-            values=["Camera 0 (Webcam)", "Camera 1 (External)", "Camera 2"],
+            values=["Camera 0 (Webcam)", "Camera 1 (External)", "Camera 2", "📱 IP / Mobile Camera (URL)"],
             fg_color="#2b3240",
             button_color="#3b4455",
-            button_hover_color="#4f5b72"
+            button_hover_color="#4f5b72",
+            command=self._on_cam_source_change
         )
         self.cam_select.set("Camera 0 (Webcam)")
-        self.cam_select.pack(fill="x", pady=(2, 12))
+        self.cam_select.pack(fill="x", pady=(2, 8))
+
+        # Dynamic IP Camera URL Entry Frame
+        self.ip_url_frame = ctk.CTkFrame(self.left_panel, fg_color="transparent")
+        ctk.CTkLabel(
+            self.ip_url_frame,
+            text="🔗 Mobile Stream URL:",
+            font=ctk.CTkFont(size=11, weight="bold"),
+            text_color="#00adb5"
+        ).pack(anchor="w")
+        self.ip_url_entry = ctk.CTkEntry(
+            self.ip_url_frame,
+            placeholder_text="http://192.168.1.15:8080/video",
+            fg_color="#181a20",
+            border_color="#00adb5"
+        )
+        self.ip_url_entry.pack(fill="x", pady=(2, 6))
+
 
         # Start / Stop Button
         self.toggle_btn = ctk.CTkButton(
@@ -342,6 +360,12 @@ class SurveillanceDesktopApp(ctk.CTk):
             fill="#718096"
         )
 
+    def _on_cam_source_change(self, value):
+        if "IP" in value or "URL" in value:
+            self.ip_url_frame.pack(fill="x", pady=(0, 8), before=self.toggle_btn)
+        else:
+            self.ip_url_frame.pack_forget()
+
     def _on_threshold_change(self, value):
         val = int(value)
         self.threshold_label.configure(text=f"Crowd Alert Threshold: {val}")
@@ -356,20 +380,33 @@ class SurveillanceDesktopApp(ctk.CTk):
 
     def start_surveillance(self):
         cam_str = self.cam_select.get()
-        try:
-            cam_idx = int(cam_str.split(" ")[1])
-        except Exception:
-            cam_idx = 0
+        if "IP" in cam_str or "URL" in cam_str:
+            cam_source = self.ip_url_entry.get().strip()
+            if not cam_source:
+                messagebox.showwarning(
+                    "IP Camera URL Required",
+                    "Please enter the Mobile / IP Camera Stream URL.\n\nExample:\nhttp://192.168.1.15:8080/video"
+                )
+                return
+        else:
+            try:
+                cam_source = int(cam_str.split(" ")[1])
+            except Exception:
+                cam_source = 0
 
         crowd_thresh = int(self.threshold_slider.get())
 
         # Initialize pipeline
-        self.pipeline = SurveillancePipeline(camera_index=cam_idx, crowd_threshold=crowd_thresh)
+        self.pipeline = SurveillancePipeline(camera_index=cam_source, crowd_threshold=crowd_thresh)
         
         # Test open camera
-        self.cap = cv2.VideoCapture(cam_idx)
+        self.cap = cv2.VideoCapture(cam_source)
         if not self.cap.isOpened():
-            messagebox.showerror("Camera Error", f"Could not connect to Camera {cam_idx}.\nPlease check connection or select another index.")
+            display_name = cam_source if isinstance(cam_source, str) else f"Camera {cam_source}"
+            messagebox.showerror(
+                "Camera Error",
+                f"Could not connect to:\n{display_name}\n\nTips for Mobile Cameras:\n- Ensure Phone and PC are on the SAME Wi-Fi network\n- Verify the IP URL matches your phone's screen (e.g. http://192.168.1.X:8080/video)\n- Make sure 'Start Server' is running in the phone app"
+            )
             self.cap.release()
             self.cap = None
             return
@@ -391,6 +428,7 @@ class SurveillanceDesktopApp(ctk.CTk):
             fg_color="#1c3829"
         )
         self.cam_select.configure(state="disabled")
+        self.ip_url_entry.configure(state="disabled")
 
         # Launch background processing thread
         self.video_thread = threading.Thread(target=self._video_worker_loop, daemon=True)
@@ -419,7 +457,9 @@ class SurveillanceDesktopApp(ctk.CTk):
             fg_color="#2b2d38"
         )
         self.cam_select.configure(state="normal")
+        self.ip_url_entry.configure(state="normal")
         self.fps_label.configure(text="FPS: 0.0")
+
         self.person_count_label.configure(text="👥 Persons Detected: 0")
         self.threat_banner.configure(
             text="🟢 SYSTEM MONITORING STANDBY",

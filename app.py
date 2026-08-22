@@ -16,16 +16,22 @@ st.title("🧠 Smart AI Surveillance Dashboard")
 
 # Sidebar configurations
 st.sidebar.header("⚙️ Configuration")
-camera_source = st.sidebar.selectbox("Camera Source", ["0 (Webcam)", "1 (External Camera)"])
+camera_source = st.sidebar.selectbox("Camera Source", ["0 (Webcam)", "1 (External Camera)", "📱 Mobile / IP Camera (URL)"])
+
+if "IP" in camera_source or "URL" in camera_source:
+    ip_url = st.sidebar.text_input("Mobile Stream URL", value="http://192.168.1.15:8080/video", help="Enter the streaming URL from IP Webcam or DroidCam")
+    cam_source = ip_url.strip()
+else:
+    cam_source = int(camera_source.split(" ")[0])
+
 crowd_val = st.sidebar.slider("Crowd Alert Threshold", min_value=1, max_value=20, value=3)
 
-cam_idx = int(camera_source.split(" ")[0])
-
 if 'pipeline' not in st.session_state:
-    st.session_state.pipeline = SurveillancePipeline(camera_index=cam_idx, crowd_threshold=crowd_val)
+    st.session_state.pipeline = SurveillancePipeline(camera_index=cam_source, crowd_threshold=crowd_val)
 else:
-    st.session_state.pipeline.camera_index = cam_idx
+    st.session_state.pipeline.camera_index = cam_source
     st.session_state.pipeline.crowd_threshold = crowd_val
+
 
 st.sidebar.header("🚨 Notification Settings")
 enable_email = st.sidebar.checkbox("📬 Enable Email Alerts", value=True)
@@ -79,7 +85,7 @@ def update_logs_table():
 # Main loop
 if run_camera:
     if 'camera' not in st.session_state:
-        cap_temp = cv2.VideoCapture(cam_idx)
+        cap_temp = cv2.VideoCapture(cam_source)
         cap_temp.set(cv2.CAP_PROP_BUFFERSIZE, 1)
         st.session_state.camera = cap_temp
     
@@ -87,7 +93,9 @@ if run_camera:
     
     # Check if camera opened
     if not cap.isOpened():
-        st.error(f"Cannot open camera {cam_idx}")
+        display_src = cam_source if isinstance(cam_source, str) else f"Camera {cam_source}"
+        st.error(f"Cannot open {display_src}. Please verify camera index or Wi-Fi stream URL.")
+
     else:
         update_time = time.time()
         while run_camera:

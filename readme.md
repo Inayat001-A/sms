@@ -54,9 +54,11 @@ streamlit run app.py
 
 ## 🎮 Desktop Interface Controls
 
-1. **Camera Source**: Select your camera device (e.g. `Camera 0 (Webcam)`).
-2. **Start / Stop Surveillance**: Toggle real-time AI processing with the main action button.
-3. **Crowd Alert Threshold**: Drag the slider to set sensitivity (e.g. 3 people).
-4. **Register Face**: Enter a name and click **📸 Capture & Register Face** while looking at the camera.
-5. **Clear Logs**: Purge the SQLite alert logs whenever needed.
-6. **Open Faces Folder**: View/manage saved known face images in Windows Explorer.
+1. **Camera Source**: Select your camera device (e.g. `Camera 0 (Webcam)`, `Camera 1 (External)`, or `📱 IP / Mobile Camera (URL)`).
+2. **Mobile / IP Camera URL**: When IP camera is selected, paste your phone's Wi-Fi stream URL (e.g. `http://192.168.1.15:8080/video`).
+3. **Start / Stop Surveillance**: Toggle real-time AI processing with the main action button.
+4. **Crowd Alert Threshold**: Drag the slider to set sensitivity (e.g. 3 people).
+5. **Register Face**: Enter a name and click **📸 Capture & Register Face** while looking at the camera.
+6. **Clear Logs**: Purge the SQLite alert logs whenever needed.
+7. **Open Faces Folder**: View/manage saved known face images in Windows Explorer.
+
