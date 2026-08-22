@@ -15,7 +15,8 @@ import cv2
 import numpy as np
 
 from surveillance_pipeline import SurveillancePipeline
-from database import get_recent_logs, clear_logs, log_event, init_db
+from database import get_recent_logs, clear_logs, log_event, init_db, archive_and_clear_logs
+
 
 # Initialize database
 init_db()
@@ -47,6 +48,7 @@ class SurveillanceDesktopApp(ctk.CTk):
         self.person_count = 0
         self.weapon_detected = False
         self.last_log_check = 0
+        self.last_logs_signature = None
 
         # Build UI layout
         self._build_ui()
@@ -249,13 +251,23 @@ class SurveillanceDesktopApp(ctk.CTk):
         )
         self.open_folder_btn.pack(fill="x", pady=(0, 6))
 
+        self.open_proofs_btn = ctk.CTkButton(
+            self.left_panel,
+            text="📁 Open Security Proofs",
+            font=ctk.CTkFont(size=12),
+            fg_color="#23323d",
+            hover_color="#314656",
+            command=self.open_proofs_folder
+        )
+        self.open_proofs_btn.pack(fill="x", pady=(0, 6))
+
         self.clear_logs_btn = ctk.CTkButton(
             self.left_panel,
-            text="🗑️ Clear Event Logs",
+            text="🧹 Clear & Archive Screen Logs",
             font=ctk.CTkFont(size=12),
             fg_color="#452323",
             hover_color="#633131",
-            command=self.clear_database_logs
+            command=self.clear_and_archive_feed
         )
         self.clear_logs_btn.pack(fill="x", pady=(0, 10))
 
@@ -336,7 +348,35 @@ class SurveillanceDesktopApp(ctk.CTk):
 
         # Scrollable log cards container
         self.log_feed = ctk.CTkScrollableFrame(self.right_panel, fg_color="#14161d", corner_radius=8)
-        self.log_feed.grid(row=1, column=0, sticky="nsew", padx=10, pady=(5, 10))
+        self.log_feed.grid(row=1, column=0, sticky="nsew", padx=10, pady=(5, 5))
+
+        # Alerts Feed Footer (Quick Action Buttons)
+        alerts_footer = ctk.CTkFrame(self.right_panel, fg_color="transparent")
+        alerts_footer.grid(row=2, column=0, sticky="ew", padx=10, pady=(0, 10))
+        alerts_footer.grid_columnconfigure((0, 1), weight=1)
+
+        self.quick_clear_btn = ctk.CTkButton(
+            alerts_footer,
+            text="🧹 Clear & Save Proof",
+            font=ctk.CTkFont(size=11, weight="bold"),
+            fg_color="#3d2224",
+            hover_color="#572e31",
+            height=30,
+            command=self.clear_and_archive_feed
+        )
+        self.quick_clear_btn.grid(row=0, column=0, padx=(0, 4), sticky="ew")
+
+        self.quick_proofs_btn = ctk.CTkButton(
+            alerts_footer,
+            text="📂 Open Proofs",
+            font=ctk.CTkFont(size=11),
+            fg_color="#272d3b",
+            hover_color="#363f52",
+            height=30,
+            command=self.open_proofs_folder
+        )
+        self.quick_proofs_btn.grid(row=0, column=1, padx=(4, 0), sticky="ew")
+
 
         # Initial placeholder on canvas
         self._draw_standby_placeholder()
@@ -612,30 +652,35 @@ class SurveillanceDesktopApp(ctk.CTk):
 
     def update_logs_display(self):
         curr_time = time.time()
-        if curr_time - self.last_log_check > 1.5:
+        if curr_time - self.last_log_check > 1.2:
             self.last_log_check = curr_time
             logs = get_recent_logs(20)
 
-            # Clear current log cards in scrollable frame
-            for child in self.log_feed.winfo_children():
-                child.destroy()
+            # Generate signature to only update when new alerts arrive (eliminates 100% of blinking)
+            current_sig = tuple((l[0], l[1], l[2], l[3]) for l in logs)
+            if current_sig != self.last_logs_signature:
+                self.last_logs_signature = current_sig
 
-            if not logs:
-                no_logs = ctk.CTkLabel(
-                    self.log_feed,
-                    text="No security alerts recorded yet.",
-                    font=ctk.CTkFont(size=12),
-                    text_color="#718096"
-                )
-                no_logs.pack(pady=20)
-                self.log_count_badge.configure(text="0 Events")
-            else:
-                self.log_count_badge.configure(text=f"{len(logs)} Events")
-                for log in logs:
-                    log_id, timestamp, event_type, desc, _ = log
-                    self._create_log_card(timestamp, event_type, desc)
+                # Clear and re-populate only when logs actually changed
+                for child in self.log_feed.winfo_children():
+                    child.destroy()
 
-        self.after(1500, self.update_logs_display)
+                if not logs:
+                    no_logs = ctk.CTkLabel(
+                        self.log_feed,
+                        text="🛡️ Feed is clean.\nNo new security alerts.",
+                        font=ctk.CTkFont(size=12),
+                        text_color="#718096"
+                    )
+                    no_logs.pack(pady=25)
+                    self.log_count_badge.configure(text="0 Events", fg_color="#2d3748")
+                else:
+                    self.log_count_badge.configure(text=f"{len(logs)} Events", fg_color="#742a2a")
+                    for log in logs:
+                        log_id, timestamp, event_type, desc, _ = log
+                        self._create_log_card(timestamp, event_type, desc)
+
+        self.after(1200, self.update_logs_display)
 
     def _create_log_card(self, timestamp, event_type, desc):
         # Color palette depending on event
@@ -709,11 +754,30 @@ class SurveillanceDesktopApp(ctk.CTk):
         else:
             subprocess.Popen(["xdg-open", folder_path])
 
+    def open_proofs_folder(self):
+        folder_path = os.path.abspath("security_proofs")
+        if not os.path.exists(folder_path):
+            os.makedirs(folder_path)
+        if sys.platform == "win32":
+            os.startfile(folder_path)
+        else:
+            subprocess.Popen(["xdg-open", folder_path])
+
+    def clear_and_archive_feed(self):
+        archived, proof_path, count = archive_and_clear_logs("security_proofs")
+        self.last_logs_signature = None
+        self.last_log_check = 0
+        self.update_logs_display()
+        if archived:
+            messagebox.showinfo(
+                "Alerts Archived & Screen Cleaned",
+                f"✅ Successfully archived {count} alert(s) as evidence to:\n{os.path.basename(proof_path)}\n\n📁 Stored in: security_proofs/\n\nYour alert screen is now sparkling clean!"
+            )
+        else:
+            messagebox.showinfo("Feed Clean", "The alert feed is already clean (0 events).")
+
     def clear_database_logs(self):
-        if messagebox.askyesno("Confirm Clear", "Are you sure you want to clear all surveillance event logs?"):
-            clear_logs()
-            self.last_log_check = 0
-            self.update_logs_display()
+        self.clear_and_archive_feed()
 
     def on_closing(self):
         self.stop_surveillance()
@@ -727,3 +791,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
