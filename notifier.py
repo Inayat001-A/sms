@@ -1,11 +1,21 @@
 import os
 import smtplib
 from email.message import EmailMessage
-from twilio.rest import Client
-from dotenv import load_dotenv
 import threading
 
-load_dotenv()
+try:
+    from twilio.rest import Client
+    TWILIO_AVAILABLE = True
+except ImportError:
+    TWILIO_AVAILABLE = False
+    Client = None
+
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+
 
 class AlertSystem:
     def __init__(self):
@@ -20,11 +30,12 @@ class AlertSystem:
         self.target_number = os.getenv("TARGET_PHONE_NUMBER", "")
         
         self.twilio_client = None
-        if self.twilio_sid and self.twilio_token:
+        if TWILIO_AVAILABLE and Client and self.twilio_sid and self.twilio_token:
             try:
                 self.twilio_client = Client(self.twilio_sid, self.twilio_token)
             except Exception as e:
                 print(f"Failed to initialize Twilio: {e}")
+
 
     def send_email_alert_sync(self, subject, body):
         if not self.smtp_email or not self.smtp_password:

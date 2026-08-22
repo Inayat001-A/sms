@@ -1,5 +1,9 @@
+import warnings
+warnings.filterwarnings("ignore")
+
 import os
 import sys
+
 import time
 import threading
 import subprocess

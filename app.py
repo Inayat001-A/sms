@@ -1,4 +1,8 @@
+import warnings
+warnings.filterwarnings("ignore")
+
 import streamlit as st
+
 import cv2
 import pandas as pd
 import os
