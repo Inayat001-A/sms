@@ -5,3 +5,8 @@ __pycache__/
 *.pyd
 .env
 .vscode/
+
+# Project private documentation (local only)
+Project_Documentry.txt
+Project_Documentry
+

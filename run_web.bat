@@ -1,0 +1,6 @@
+@echo off
+echo Activating Virtual Environment...
+call venv\Scripts\activate.bat
+echo Starting Smart Surveillance Streamlit Dashboard (Browser Mode)...
+streamlit run app.py
+pause

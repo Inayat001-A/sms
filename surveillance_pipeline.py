@@ -41,6 +41,8 @@ class SurveillancePipeline:
         self.frame_count = 0
 
     def _load_known_faces(self, directory):
+        self.known_face_encodings = []
+        self.known_face_names = []
         if not os.path.exists(directory):
             print(f"Directory {directory} not found. Creating it.")
             os.makedirs(directory)

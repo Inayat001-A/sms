@@ -38,6 +38,15 @@ def get_recent_logs(limit=20):
     conn.close()
     return rows
 
+def clear_logs():
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM logs")
+    conn.commit()
+    conn.close()
+
+# Auto-initialize DB on import
+init_db()
+
 if __name__ == "__main__":
-    init_db()
     print("Database initialized successfully.")

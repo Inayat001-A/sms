@@ -1,52 +1,62 @@
-🧠 Smart AI Surveillance System
-📌 Overview
+# 🧠 Smart AI Surveillance System
 
-The Smart AI Surveillance System is an intelligent security solution that uses Artificial Intelligence and Computer Vision to monitor real-time video streams and detect suspicious activities automatically.
+## 📌 Overview
 
-It reduces the need for constant human monitoring by analyzing CCTV footage and generating alerts when unusual events occur.
+The **Smart AI Surveillance System** is an intelligent security solution powered by Computer Vision and Deep Learning (YOLOv8 + Face Recognition) to monitor real-time video streams, detect threats/weapons, identify known/unknown faces, detect crowds, and maintain persistent event logs.
 
-🚀 Features
+---
 
-👤 Real-time Human Detection
-🕵️ Suspicious Activity Detection (Mock Weapon Detection with Knife/Bat)
-😊 Face Recognition (Known vs Unknown)
-📊 Crowd Detection
-🚨 Instant Alerts (Streamlit Dashboard & Database Logging)
-📁 Event Logging with Timestamp
-🌐 Web Dashboard for Monitoring
+## 🚀 Key Features
 
-🛠️ Tech Stack
-- Python Core programming
-- OpenCV Video processing
-- YOLOv8 (Ultralytics) Object & Human detection
-- Streamlit Web interface
-- SQLite Data storage
-- face-recognition Face detection & recognition
+- **👤 Real-time Human Tracking & Detection**: Identifies and tracks people across frames using YOLOv8.
+- **🗡️ Weapon / Threat Detection**: Automatic detection of suspicious objects (knives, bats, weapons) with instant threat escalation.
+- **😊 Face Recognition**: Distinguishes known personnel from unknown faces using dlib encodings in real-time.
+- **📊 Dynamic Crowd Detection**: Live crowd counter with configurable threshold alerts.
+- **🚨 Real-Time Security Alert Feed**: Instant color-coded alerts and logging to SQLite (`events.db`).
+- **📸 In-App Face Registration**: Snapshot and register new identities directly from the live camera stream.
+- **🖥️ Native Desktop GUI (Antigravity Mode)**: High-performance, low-latency CustomTkinter desktop interface without needing a browser.
+- **🌐 Web Browser Mode (Streamlit)**: Alternative web-based dashboard if browser viewing is desired.
 
-⚙️ How to Run
+---
 
-1. **Install Dependencies (if not already done)**
-   `pip install -r requirements.txt`
+## 🛠️ Tech Stack
 
-2. **Run the Application**
-   Simply run the `run.bat` file OR use the following command:
-   `streamlit run app.py`
+- **GUI / Desktop**: `CustomTkinter`, `Pillow`, `Tkinter`
+- **Vision & AI**: `OpenCV`, `Ultralytics YOLOv8`, `face_recognition`, `dlib`
+- **Database**: `SQLite3` (`events.db`)
+- **Web UI**: `Streamlit`
 
-3. **Dashboard Usage**
-   - Access the dashboard at `http://localhost:8501`.
-   - Select your Camera Source (0 for Webcam).
-   - Click "Start Surveillance" to begin.
-   - Adjust the Crowd Threshold as needed.
-   - Add images of known people (e.g., `john_doe.jpg`) to the `known_faces/` directory for face recognition.
+---
 
-🧠 How It Works
+## ⚙️ How to Run
 
-📷 Capture live video from camera
-🧠 Process frames using YOLOv8 model for object detection (Humans & Weapons)
-🔍 Utilize `face-recognition` to find unknown individuals
-⚠️ Apply rules to identify suspicious activity (Crowding, Unknown Faces, Weapons)
-💾 Store event logs in SQLite database `events.db`
-🌐 Display real-time results on the Streamlit dashboard
+### 1. 🖥️ Native Desktop Mode (Inside Antigravity / No Browser)
+Run with Python:
+```bash
+python desktop_app.py
+```
+*Or via entry point:*
+```bash
+python main.py
+```
+*Or double click:*
+`run.bat`
 
-📜 License
-This project is for educational purposes.
+### 2. 🌐 Web Browser Mode (Streamlit)
+If you wish to run in a web browser:
+```bash
+streamlit run app.py
+```
+*Or double click:*
+`run_web.bat`
+
+---
+
+## 🎮 Desktop Interface Controls
+
+1. **Camera Source**: Select your camera device (e.g. `Camera 0 (Webcam)`).
+2. **Start / Stop Surveillance**: Toggle real-time AI processing with the main action button.
+3. **Crowd Alert Threshold**: Drag the slider to set sensitivity (e.g. 3 people).
+4. **Register Face**: Enter a name and click **📸 Capture & Register Face** while looking at the camera.
+5. **Clear Logs**: Purge the SQLite alert logs whenever needed.
+6. **Open Faces Folder**: View/manage saved known face images in Windows Explorer.
